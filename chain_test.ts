@@ -30,4 +30,15 @@ describe('chains', () => {
       {a: 1, b: 4, c: 9}
     );
   });
+
+  it('should pluck with map', () => {
+    expectDeepEqual(
+      _([{a: 2, b: 2}, {a: 2, b: 3}, {a: 1, b: 4}])
+        .map('a')
+        .sort()
+        .uniq()
+        .value(),
+      [1, 2]
+    );
+  });
 });
