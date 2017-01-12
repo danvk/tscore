@@ -111,6 +111,17 @@ for (const node of collectNodes(source, assertions)) {
   console.log('---');
 }
 
+// let emitResult = program.emit();
+
+let allDiagnostics = ts.getPreEmitDiagnostics(program);  // .concat(emitResult.diagnostics);
+
+console.log('Diagnostics:');
+for (const diagnostic of allDiagnostics) {
+  let { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
+  let message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
+  console.log(`${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`);
+}
+
 // for (const assertion of assertions) {
 //   if (assertion.kind === 'type') {
 //       const {pos, type} = assertion;
@@ -122,3 +133,9 @@ for (const node of collectNodes(source, assertions)) {
 // visitor.walk(source);
 
 // console.log()
+
+/*
+
+
+
+*/
