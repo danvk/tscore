@@ -64,6 +64,7 @@ type Assertion = TypeAssertion | ErrorAssertion;
 interface NodedAssertion {
   assertion: Assertion;
   node: ts.Node;
+  type: ts.Type;
 }
 
 const assertions = [] as Assertion[];
@@ -84,14 +85,15 @@ scanAllTokens(scanner, () => {
   }
 });
 
-console.log(assertions);
+// console.log(assertions);
 
 function collectNodes(node: ts.Node, assertions: Assertion[], nodedAssertions: NodedAssertion[] = []): NodedAssertion[] {
   const pos = node.getStart();
 
   const assertion = _.find(assertions, {pos});
-  if (assertion) {
-    nodedAssertions.push({ node, assertion });
+  if (assertion && node.kind === ts.SyntaxKind.ExpressionStatement) {
+    const type = checker.getTypeAtLocation(node.getChildren()[0]);
+    nodedAssertions.push({ node, assertion, type });
   }
 
   ts.forEachChild(node, child => {
@@ -103,7 +105,10 @@ function collectNodes(node: ts.Node, assertions: Assertion[], nodedAssertions: N
 // console.log(collectNodes(source, assertions));
 
 for (const node of collectNodes(source, assertions)) {
-  console.log(node.assertion, node.node.getText());
+  console.log(node.assertion);
+  console.log(node.node.kind, node.node.getText());
+  console.log(checker.typeToString(node.type));
+  console.log('---');
 }
 
 // for (const assertion of assertions) {
