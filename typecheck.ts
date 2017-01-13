@@ -82,9 +82,6 @@ for (const diagnostic of allDiagnostics) {
   if (nodedAssertion) {
     nodedAssertion.error = diagnostic;
   }
-  // let { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
-  //
-  // console.log(`${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`);
 }
 
 let numFailures = 0;
@@ -113,15 +110,6 @@ for (const {node, assertion, type, error} of nodedAssertions) {
       numSuccesses++;
     }
   }
-
-  // console.log(assertion);
-  // console.log(node.kind, `${node.pos}-${node.end}`, node.getText());
-  // console.log(checker.typeToString(type));
-  // if (error) {
-  //   let message = ts.flattenDiagnosticMessageText(error.messageText, '\n');
-  //   console.log('Error:', message);
-  // }
-  // console.log('---');
 }
 
 console.log(`Successes: ${numSuccesses}`);

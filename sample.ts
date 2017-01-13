@@ -1,10 +1,10 @@
 // $ExpectType number
 _.find([1, 2, 3], x => x * 1 == 3);
-// $ExpectError number cannot be compared to string
+// $ExpectError Operator '==' cannot be applied to types 'number' and 'string'.
 _.find([1, 2, 3], x => x == 'a');
-// $ExpectError number. This type is incompatible with function type.
+// $ExpectType number
 _.find([1, 2, 3], 1);
-// $ExpectError property `y`. Property not found in object literal
+// $ExpectError Property 'y' does not exist on type '{ x: number; }'.
 _.find([{x:1}, {x:2}, {x:3}], v => v.y == 3);
-// $ExpectType boolean[]
+// $ExpectType { x: number; }
 _.find([{x:1}, {x:2}, {x:3}], v => v.x == 3);
