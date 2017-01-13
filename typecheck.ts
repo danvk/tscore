@@ -1,37 +1,6 @@
 import * as ts from 'typescript';
 import * as _ from 'lodash';
-import { SyntaxWalker } from 'tslint';
 import { scanAllTokens } from 'tslint';
-
-class TypeCheckWalker extends SyntaxWalker {
-  protected visitSingleLineCommentTrivia(node: ts.Node) {
-    console.log('single-line comment node');
-    console.log(node.getFullText());
-  }
-
-  protected visitMultiLineCommentTrivia(node: ts.Node) {
-    console.log('multi-line comment node');
-    console.log(node.getFullText());
-  }
-
-  protected visitNode(node: ts.Node) {
-    console.log(node.kind, node.getText().slice(0, 100));
-    switch (node.kind) {
-      case ts.SyntaxKind.SingleLineCommentTrivia:
-        this.visitSingleLineCommentTrivia(node);
-        break;
-
-      case ts.SyntaxKind.MultiLineCommentTrivia:
-        this.visitMultiLineCommentTrivia(node);
-        break;
-
-      default:
-        super.visitNode(node);
-    }
-  }
-}
-
-const walker = new SyntaxWalker();
 
 const [,, tsFile] = process.argv;
 
@@ -40,12 +9,11 @@ const host = ts.createCompilerHost(options, true);
 
 const program = ts.createProgram([tsFile], options, host);
 
-// console.log(program);
-
 const checker = program.getTypeChecker();
 
 const source = program.getSourceFile(tsFile);
-const scanner = ts.createScanner(ts.ScriptTarget.ES5, false, ts.LanguageVariant.Standard, source.getFullText());
+const scanner = ts.createScanner(
+    ts.ScriptTarget.ES5, false, ts.LanguageVariant.Standard, source.getFullText());
 
 interface TypeAssertion {
   kind: 'type';
@@ -65,6 +33,7 @@ interface NodedAssertion {
   assertion: Assertion;
   node: ts.Node;
   type: ts.Type;
+  error?: ts.Diagnostic;
 }
 
 const assertions = [] as Assertion[];
@@ -102,40 +71,60 @@ function collectNodes(node: ts.Node, assertions: Assertion[], nodedAssertions: N
   return nodedAssertions;
 }
 
-// console.log(collectNodes(source, assertions));
+const nodedAssertions = collectNodes(source, assertions);
 
-for (const node of collectNodes(source, assertions)) {
-  console.log(node.assertion);
-  console.log(node.node.kind, node.node.getText());
-  console.log(checker.typeToString(node.type));
-  console.log('---');
-}
+let allDiagnostics = ts.getPreEmitDiagnostics(program);
 
-// let emitResult = program.emit();
-
-let allDiagnostics = ts.getPreEmitDiagnostics(program);  // .concat(emitResult.diagnostics);
-
-console.log('Diagnostics:');
 for (const diagnostic of allDiagnostics) {
-  let { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
-  let message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
-  console.log(`${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`);
+  const pos = diagnostic.start;
+
+  const nodedAssertion = _.find(nodedAssertions, na => (pos >= na.node.pos && pos <= na.node.end));
+  if (nodedAssertion) {
+    nodedAssertion.error = diagnostic;
+  }
+  // let { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
+  //
+  // console.log(`${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`);
 }
 
-// for (const assertion of assertions) {
-//   if (assertion.kind === 'type') {
-//       const {pos, type} = assertion;
-//       checker.getTypeAtLocation()
-//   }
-// }
+let numFailures = 0;
+let numSuccesses = 0;
+for (const {node, assertion, type, error} of nodedAssertions) {
+  const { line, character } = source.getLineAndCharacterOfPosition(node.pos);
+  if (assertion.kind === 'error') {
+    if (!error) {
+      console.error(`${tsFile}:${line}: No error but expected ${assertion.pattern}\n`)
+      numFailures++;
+    } else {
+      const message = ts.flattenDiagnosticMessageText(error.messageText, '\n');
+      if (message.indexOf(assertion.pattern) === -1) {
+        console.error(`${tsFile}:${line}: Expected error\n  ${assertion.pattern}\nbut got:\n  ${message}\n`);
+        numFailures++;
+      } else {
+        numSuccesses++;
+      }
+    }
+  } else if (assertion.kind === 'type') {
+    const typeString = checker.typeToString(type);
+    if (typeString !== assertion.type) {
+      console.error(`${tsFile}:${line}: Expected type\n  ${assertion.type}\nbut got:\n  ${typeString}\n`);
+      numFailures++;
+    } else {
+      numSuccesses++;
+    }
+  }
 
-// const visitor = new TypeCheckWalker();
-// visitor.walk(source);
+  // console.log(assertion);
+  // console.log(node.kind, `${node.pos}-${node.end}`, node.getText());
+  // console.log(checker.typeToString(type));
+  // if (error) {
+  //   let message = ts.flattenDiagnosticMessageText(error.messageText, '\n');
+  //   console.log('Error:', message);
+  // }
+  // console.log('---');
+}
 
-// console.log()
+console.log(`Successes: ${numSuccesses}`);
+console.log(`Failures: ${numFailures}`);
 
-/*
-
-
-
-*/
+process.exit(numFailures);

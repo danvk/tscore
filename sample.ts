@@ -1,4 +1,4 @@
-// $ExpectType boolean[]
+// $ExpectType number
 _.find([1, 2, 3], x => x * 1 == 3);
 // $ExpectError number cannot be compared to string
 _.find([1, 2, 3], x => x == 'a');
