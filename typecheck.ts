@@ -18,13 +18,13 @@ const scanner = ts.createScanner(
 interface TypeAssertion {
   kind: 'type';
   type: string;
-  pos: number;
+  line: number;
 }
 
 interface ErrorAssertion {
   kind: 'error';
   pattern: string;
-  pos: number;
+  line: number;
 }
 
 type Assertion = TypeAssertion | ErrorAssertion;
@@ -43,26 +43,32 @@ scanAllTokens(scanner, () => {
     const m = commentText.match(/^\/\/ \$Expect(Type|Error) (.*)/);
     if (!m) return;
 
-    const pos = scanner.getTokenPos() + scanner.getTokenText().length + 1;
+    const pos = scanner.getTokenPos();
+    let { line } = source.getLineAndCharacterOfPosition(pos);
+    line++;  // the assertion applies to the next line.
 
     const [, kind, text] = m;
     if (kind === 'Type') {
-      assertions.push({ kind: 'type', type: text, pos });
+      assertions.push({ kind: 'type', type: text, line });
     } else if (kind === 'Error') {
-      assertions.push({ kind: 'error', pattern: text, pos });
+      assertions.push({ kind: 'error', pattern: text, line });
     }
   }
 });
 
-// console.log(assertions);
-
 function collectNodes(node: ts.Node, assertions: Assertion[], nodedAssertions: NodedAssertion[] = []): NodedAssertion[] {
-  const pos = node.getStart();
+  if (node.kind >= ts.SyntaxKind.VariableStatement &&
+      node.kind <= ts.SyntaxKind.DebuggerStatement) {
+    const pos = node.getStart();
+    const { line } = source.getLineAndCharacterOfPosition(pos);
 
-  const assertion = _.find(assertions, {pos});
-  if (assertion && node.kind === ts.SyntaxKind.ExpressionStatement) {
-    const type = checker.getTypeAtLocation(node.getChildren()[0]);
-    nodedAssertions.push({ node, assertion, type });
+    const assertionIndex = _.findIndex(assertions, {line});
+    if (assertionIndex >= 0) {
+      const assertion = assertions[assertionIndex];
+      const type = checker.getTypeAtLocation(node.getChildren()[0]);
+      nodedAssertions.push({ node, assertion, type });
+      assertions.splice(assertionIndex, 1);
+    }
   }
 
   ts.forEachChild(node, child => {
@@ -72,25 +78,35 @@ function collectNodes(node: ts.Node, assertions: Assertion[], nodedAssertions: N
 }
 
 const nodedAssertions = collectNodes(source, assertions);
+if (assertions.length) {
+  console.error(assertions);
+  throw new Error('Unable to attach nodes to all assertions.');
+}
 
 let allDiagnostics = ts.getPreEmitDiagnostics(program);
 
+let numFailures = 0;
+let numSuccesses = 0;
+
 for (const diagnostic of allDiagnostics) {
   const pos = diagnostic.start;
+  let { line } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
 
-  const nodedAssertion = _.find(nodedAssertions, na => (pos >= na.node.pos && pos <= na.node.end));
+  const nodedAssertion = _.find(nodedAssertions, {assertion: {line}});
   if (nodedAssertion) {
     nodedAssertion.error = diagnostic;
+  } else {
+    let message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
+    console.error(`${tsFile}:${line}: Unexpected error\n  ${message}`);
+    numFailures++;
   }
 }
 
-let numFailures = 0;
-let numSuccesses = 0;
 for (const {node, assertion, type, error} of nodedAssertions) {
   const { line, character } = source.getLineAndCharacterOfPosition(node.pos);
   if (assertion.kind === 'error') {
     if (!error) {
-      console.error(`${tsFile}:${line}: No error but expected ${assertion.pattern}\n`)
+      console.error(`${tsFile}:${line}: Expected error ${assertion.pattern}\n`)
       numFailures++;
     } else {
       const message = ts.flattenDiagnosticMessageText(error.messageText, '\n');

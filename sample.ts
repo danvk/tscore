@@ -8,3 +8,8 @@ _.find([1, 2, 3], 1);
 _.find([{x:1}, {x:2}, {x:3}], v => v.y == 3);
 // $ExpectType { x: number; }
 _.find([{x:1}, {x:2}, {x:3}], v => v.x == 3);
+
+function f(x: {a: number}) {
+  // $ExpectError Property 'b' does not exist
+  return x.b;
+}
