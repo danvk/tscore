@@ -11,7 +11,10 @@ declare module 'lodash' {
     sort(): ChainableArray<T>;
     sum(): T;  // XXX how to make this only valid for number, string?
     flatMap<U>(mapFn: (t: T, i: number, collection: T[]) => U[]): ChainableArray<U>;
+    forEach(fn: (t: T, i: number, collection: T[]) => any): void;
   }
+  // XXX it would be nice to share code between Chainable(Array|Object).
+  // Many of the methods are identical except for the key type.
   interface ChainableObject<T> extends Chainable<T> {
     mapValues<K extends keyof T, V>(mapFn: (v: T[K], k: K) => V): ChainableObject<{[k in K]: V}>;
     flatMap<K extends keyof T, U>(mapFn: (t: T[K], k: K, collection: T) => U[]): ChainableArray<U>;
