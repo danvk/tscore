@@ -5,7 +5,8 @@ declare module 'lodash' {
     value(): T;
   }
   interface ChainableArray<T> extends Chainable<T[]> {
-    map<U>(mapFn: (t: T) => U): ChainableArray<U>;
+    map<U extends Primitive>(mapFn: (t: T) => U): ChainableArray<U>;
+    map<U>(mapFn: (t: T) => U): ChainableObjectArray<U>;
     uniq(): ChainableArray<T>;
     sort(): ChainableArray<T>;
   }

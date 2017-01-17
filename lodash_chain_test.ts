@@ -41,4 +41,20 @@ describe('chains', () => {
       [1, 2]
     );
   });
+
+  it('should map to an array of objects', () => {
+    expectDeepEqual(
+      _([1, 2, 3])
+        .map(x => ({num: x, sqr: x * x, str: '' + x}))
+        .map('str')
+        .value(),
+      ['1', '2', '3']);
+
+    expectDeepEqual(
+      _([1, 2, 3])
+        .map(x => ({num: x, sqr: x * x, str: '' + x}))
+        .map('sqr')
+        .value(),
+      [1, 4, 9]);
+  });
 });
