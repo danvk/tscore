@@ -78,4 +78,19 @@ describe('chains', () => {
       [1, 1, 2, 4, 3]
     );
   });
+
+  it('should forEach', () => {
+    _({x: 1, y: 2, z: 3}).forEach((v, k, c) => {});
+    _(['a', 'b', 'c']).forEach((v, i, c) => {});
+  });
+
+  it('should group by', () => {
+    const vowels = ['a', 'e', 'i', 'o', 'u'];
+    expectDeepEqual(
+      _(['a', 'b', 'c', 'd', 'e'])
+        .groupBy(v => vowels.indexOf(v) >= 0)
+        .mapValues(vs => vs.join(','))
+        .value(),
+      {true: 'ae', false: 'bcd'});
+  });
 });
