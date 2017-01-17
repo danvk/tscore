@@ -93,4 +93,8 @@ describe('chains', () => {
         .value(),
       {true: 'ae', false: 'bcd'});
   });
+
+  it('should map objects', () => {
+
+  });
 });

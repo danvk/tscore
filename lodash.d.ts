@@ -4,9 +4,11 @@ declare module 'lodash' {
   interface Chainable<T> {
     value(): T;
   }
-  interface ChainableArray<T> extends Chainable<T[]> {
-    map<U extends Primitive>(mapFn: (t: T) => U): ChainableArray<U>;
-    map<U>(mapFn: (t: T) => U): ChainableObjectArray<U>;
+  interface ChainableCollection<K, T> extends Chainable<T> {
+    map<U extends Primitive>(mapFn: (t: T, k: K) => U): ChainableArray<U>;
+    map<U>(mapFn: (t: T, k: K) => U): ChainableObjectArray<U>;
+  }
+  interface ChainableArray<T> extends ChainableCollection<number, T> {
     uniq(): ChainableArray<T>;
     sort(): ChainableArray<T>;
     sum(): T;  // XXX how to make this only valid for number, string?
@@ -16,8 +18,9 @@ declare module 'lodash' {
   }
   // XXX it would be nice to share code between Chainable(Array|Object).
   // Many of the methods are identical except for the key type.
+  //   a complication is that keyof number[] is all the array methods.
   // XXX would also be nice to pull out a notion of "iteratee", which can be either a function or a key.
-  interface ChainableObject<T> extends Chainable<T> {
+  interface ChainableObject<T> extends ChainableCollection<keyof T, T> {
     mapValues<K extends keyof T, V>(mapFn: (v: T[K], k: K) => V): ChainableObject<{[k in K]: V}>;
     flatMap<K extends keyof T, U>(mapFn: (t: T[K], k: K, collection: T) => U[]): ChainableArray<U>;
     forEach<K extends keyof T>(fn: (t: T[K], k: K, collection: T) => any): void;
