@@ -57,4 +57,25 @@ describe('chains', () => {
         .value(),
       [1, 4, 9]);
   });
+
+  it('should auto-close chains', () => {
+    const v = _([1, 2, 3]).map(x => x*x).sum();
+    const w = _([1, 2, 3]).map(x => '' + x).sum();
+  });
+
+  it('distinguishes flatMaps', () => {
+    expectDeepEqual(
+      _([1, 2, 3, 4])
+        .flatMap((v, i) => i % 2 === 0 ? [v] : [v, v * v])
+        .value(),
+      [1, 2, 4, 3, 4, 16]
+    );
+
+    expectDeepEqual(
+      _({x: 1, y: 2, z: 3})
+        .flatMap((v, k) => (k === 'z' ? [v] : [v, v * v]))
+        .value(),
+      [1, 1, 2, 4, 3]
+    );
+  });
 });

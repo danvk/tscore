@@ -9,9 +9,12 @@ declare module 'lodash' {
     map<U>(mapFn: (t: T) => U): ChainableObjectArray<U>;
     uniq(): ChainableArray<T>;
     sort(): ChainableArray<T>;
+    sum(): T;  // XXX how to make this only valid for number, string?
+    flatMap<U>(mapFn: (t: T, i: number, collection: T[]) => U[]): ChainableArray<U>;
   }
   interface ChainableObject<T> extends Chainable<T> {
     mapValues<K extends keyof T, V>(mapFn: (v: T[K], k: K) => V): ChainableObject<{[k in K]: V}>;
+    flatMap<K extends keyof T, U>(mapFn: (t: T[K], k: K, collection: T) => U[]): ChainableArray<U>;
   }
   interface ChainableObjectArray<T> extends ChainableArray<T> {
     map<K extends keyof T>(k: K): ChainableArray<T[K]>;
