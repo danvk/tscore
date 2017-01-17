@@ -1,4 +1,7 @@
 Issues with current _.chain typings.
+  Lodash auto-closing is confusing & error-prone.
+  This is exactly the situation where a type checker helps you.
 Attempt to implement
   (run into issues with specialization)
 Attempt to type
+The value of being able to test types and errors.

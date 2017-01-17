@@ -3,7 +3,7 @@ import * as _ from 'lodash';
 
 const { expect } = chai;
 
-function expectDeepEqual(a, b) {
+function expectDeepEqual<T>(a: T, b: T) {
   expect(a).to.deep.equal(b);
 }
 
