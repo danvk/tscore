@@ -25,7 +25,7 @@ describe('chains', () => {
   it('should chain objects', () => {
     expectDeepEqual(
       _({a: 1, b: 2, c: 3})
-        .mapValues((x: any) => x * x)
+        .mapValues(x => x * x)
         .value(),
       {a: 1, b: 4, c: 9}
     );

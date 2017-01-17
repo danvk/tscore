@@ -1,0 +1,4 @@
+Issues with current _.chain typings.
+Attempt to implement
+  (run into issues with specialization)
+Attempt to type
